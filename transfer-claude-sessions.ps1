@@ -218,6 +218,8 @@ function Get-OrgFolders {
             if ($records.Count -gt 0) {
                 $latest = ($records | Sort-Object LastWriteTime -Descending | Select-Object -First 1).LastWriteTime
             }
+            $created = $acct.CreationTime
+            if ($org.CreationTime -gt $created) { $created = $org.CreationTime }
             $result += [pscustomobject]@{
                 Key       = '{0}\{1}' -f $acct.Name, $org.Name
                 AccountId = $acct.Name
@@ -225,6 +227,7 @@ function Get-OrgFolders {
                 Path      = $org.FullName
                 Count     = $records.Count
                 Latest    = $latest
+                Created   = $created
             }
         }
     }
@@ -236,14 +239,21 @@ function Show-FolderTable {
     Write-Log ''
     Write-Log "Session folders under $SessionsRoot" 'INFO' Cyan
     $i = 1
+    $cutoff = (Get-Date).AddHours(-24)
     foreach ($f in $Folders) {
         $when = 'no records'
         if ($f.Latest) { $when = $f.Latest.ToString('yyyy-MM-dd HH:mm') }
+        $tags = @()
+        if ($LastAccount -and ($f.AccountId -ieq $LastAccount)) { $tags += 'signed in most recently' }
+        if ($f.Created -gt $cutoff -and $f.Count -eq 0) { $tags += 'created in the last 24h, probably the NEW account' }
         $tag = ''
-        if ($LastAccount -and ($f.AccountId -ieq $LastAccount)) { $tag = '   <- account signed in most recently' }
+        if ($tags.Count -gt 0) { $tag = '   <- ' + ($tags -join '; ') }
         Write-Log ('  [{0}] {1,4} records   last modified {2,-16}   {3}{4}' -f $i, $f.Count, $when, $f.Key, $tag)
         $i++
     }
+    Write-Log ''
+    Write-Log 'Tip: the destination is normally the folder of the account you just signed into, which is usually the one with 0 records.' 'INFO' DarkGray
+    Write-Log 'If the new account is not listed, sign into it in Claude Desktop, open the Code tab once, quit, and run again.' 'INFO' DarkGray
     Write-Log ''
 }
 

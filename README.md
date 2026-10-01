@@ -13,9 +13,6 @@ If this saves your sessions, a star helps the next person find it.
 
 ## Quick start
 
-1. In Claude Desktop, sign into the **new** account, open the Code tab once, then quit the app fully (right click the tray icon, Quit).
-2. Download `transfer-claude-sessions.ps1` from this repo, open PowerShell in that folder, and run:
-
 ```powershell
 # 1. Dry run. Shows your account folders and exactly what would be copied. Changes nothing.
 powershell -ExecutionPolicy Bypass -File .\transfer-claude-sessions.ps1
@@ -27,7 +24,50 @@ powershell -ExecutionPolicy Bypass -File .\transfer-claude-sessions.ps1 -Apply
 powershell -ExecutionPolicy Bypass -File .\transfer-claude-sessions.ps1 -Undo -Apply
 ```
 
-3. Open Claude Desktop, sign into the new account, open the Code tab. Your sessions are back.
+Read the guide below once before you run it. The one thing people get wrong is the order of steps.
+
+## Step by step guide
+
+Takes about five minutes. Verified on a real account switch with 34 sessions.
+
+**Step 1. Create the new account's folder first.**
+Open Claude Desktop, sign into the **new** account, and open the Code tab once. You do not need to start a session. The app creates a folder for the new account the first time the Code tab opens. Without this step there is nowhere to copy to, and you may end up copying into some older account's folder by mistake.
+
+**Step 2. Quit Claude Desktop completely.**
+Closing the window is not enough. Right click the Claude icon in the system tray (bottom right, next to the clock, maybe hidden under the ^ arrow) and choose Quit. The script checks for this and refuses to run while the app is open, because the app rewrites these files while it runs. The Claude Code CLI in a terminal is fine and is ignored.
+
+**Step 3. Get the script.**
+Download `transfer-claude-sessions.ps1` from the [latest release](../../releases/latest) or from this repo. Put it in any folder. If Windows blocks it, right click the file, Properties, tick Unblock, OK.
+
+**Step 4. Open PowerShell in that folder.**
+In Explorer, right click inside the folder and choose "Open in Terminal", or click the address bar, type `powershell` and press Enter.
+
+**Step 5. Dry run.**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\transfer-claude-sessions.ps1
+```
+
+You get a numbered list of account folders. Each line shows how many sessions it holds and when it was last touched. The script tags the account you signed into most recently and any folder created in the last 24 hours with no sessions, which is almost always the new account.
+
+- SOURCE is the folder with your sessions in it, the account you are leaving.
+- DESTINATION is the new account's folder, usually the one with 0 records.
+
+Type the numbers when asked. The script prints exactly what it would copy and stops. Nothing has changed yet.
+
+**Step 6. Apply.**
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\transfer-claude-sessions.ps1 -Apply
+```
+
+Pick the same two numbers. It backs up the whole sessions folder to your Desktop, verifies the backup, copies the records, and prints a summary with the exact undo command.
+
+**Step 7. Check.**
+Open Claude Desktop, sign into the new account, open the Code tab. Your sessions are in the sidebar. Click one to make sure it resumes.
+
+**If it did not work.**
+Quit the app and run the dry run again. If a new folder with 0 records appeared that was not there before, the account you signed into was not the one you copied to. Just run -Apply again with that folder as the destination. Extra copies in the wrong folder are harmless, and undo can remove them if you care.
 
 ## The problem this fixes
 
@@ -44,21 +84,21 @@ transfer-claude-sessions   mode: DRY RUN (nothing will change)
 Claude Desktop is not running. Good.
 
 Session folders under C:\Users\you\AppData\Roaming\Claude\claude-code-sessions
-  [1]   34 records   last modified 2026-10-01 20:23   86005cb2-...\2bd90bbf-...   <- account signed in most recently
-  [2]   22 records   last modified 2026-08-26 12:58   af94b77e-...\65b3675f-...
-  [3]    0 records   last modified no records         af94b77e-...\2bd90bbf-...
+  [1]    0 records   last modified no records         33c1eb2b-...\8b566fdf-...   <- signed in most recently; created in the last 24h, probably the NEW account
+  [2]   34 records   last modified 2026-10-01 21:28   86005cb2-...\2bd90bbf-...
+  [3]   22 records   last modified 2026-08-27 04:29   af94b77e-...\65b3675f-...
 
-Enter the number of the SOURCE folder: 1
-Enter the number of the DESTINATION folder: 2
+Tip: the destination is normally the folder of the account you just signed into, which is usually the one with 0 records.
+
+Enter the number of the SOURCE folder: 2
+Enter the number of the DESTINATION folder: 1
 
 Source:      86005cb2-...\2bd90bbf-...   (34 records)
-Destination: af94b77e-...\65b3675f-...   (22 records)
+Destination: 33c1eb2b-...\8b566fdf-...   (0 records)
 
-Plan: 31 to copy, 1 to replace (source newer), 2 to skip, 0 invalid
+Plan: 34 to copy, 0 to replace (source newer), 0 to skip, 0 invalid
   COPY     local_12a1df3c-....json   (not in destination)
   COPY     local_1b44b4ad-....json   (not in destination)
-  REPLACE  local_23850a13-....json   (source is newer (2026-09-30 16:06 vs 2026-09-12 09:40))
-  SKIP     local_507d6bee-....json   (destination already has it, same age or newer)
   ...
 
 DRY RUN: nothing was copied. If the plan looks right, run again with -Apply.
@@ -182,7 +222,7 @@ No. It is a single PowerShell file with no dependencies and no network access. R
 
 - Relies on how Claude Desktop stores data today. It is undocumented and may change. If the layout does not match, the script stops without touching anything.
 - Windows only for now.
-- Tested with Claude Desktop in October 2026, two accounts, about fifty sessions.
+- Verified on 2026-10-01 with Claude Desktop 2.16 on Windows 11: 34 sessions copied to a freshly created account, all visible in the new sidebar and resumable.
 
 ## Contributing
 
