@@ -147,7 +147,7 @@ Yes. Pick whichever folder is the source and whichever is the destination. You c
 Yes. Run it with the old account as source and the new one as destination. Existing records in the destination are kept unless the source copy is newer.
 
 **Why does it refuse to run?**
-Claude Desktop is still open. Closing the window is not enough. Right click the Claude icon in the system tray (bottom right, maybe under the ^ arrow) and choose Quit. The app rewrites these files while running, so copying under it would be unsafe.
+Claude Desktop is still open. Closing the window is not enough. Right click the Claude icon in the system tray (bottom right, maybe under the ^ arrow) and choose Quit. The app rewrites these files while running, so copying under it would be unsafe. The Claude Code CLI in a terminal is fine and is ignored, since only the Desktop app touches these files.
 
 **It says only one account folder exists.**
 The new account has never opened the Code tab on this machine, so its folder does not exist yet. Sign into it, open the Code tab once, quit, run again.

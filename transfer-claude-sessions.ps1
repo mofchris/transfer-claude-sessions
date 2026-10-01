@@ -164,10 +164,29 @@ function Assert-ClaudeClosed {
         Write-Log 'Process check skipped (custom -SessionsRoot).' 'WARN' Yellow
         return
     }
-    $procs = @(Get-Process -Name 'Claude' -ErrorAction SilentlyContinue)
-    if ($procs.Count -gt 0) {
-        $pids = ($procs | ForEach-Object { $_.Id }) -join ', '
-        Write-Log ("Claude Desktop is still running ({0} process(es), PID {1})." -f $procs.Count, $pids) 'ERROR' Red
+    # The Desktop app and the Claude Code CLI are both called claude.exe, so
+    # tell them apart by path. The CLI (for example ~\.local\bin\claude.exe or
+    # an npm install) is harmless here and is ignored. Anything else named
+    # Claude is treated as the Desktop app, including unknown paths, to stay
+    # on the safe side.
+    $all = @(Get-CimInstance Win32_Process -Filter "Name = 'claude.exe'" -ErrorAction SilentlyContinue)
+    $desktop = @()
+    $cli = @()
+    foreach ($p in $all) {
+        $path = [string]$p.ExecutablePath
+        $isCli = ($path -match '\\\.local\\bin\\claude\.exe$') -or ($path -match '\\node_modules\\') -or ($path -match '\\npm\\')
+        if ($isCli) { $cli += $p } else { $desktop += $p }
+    }
+    if ($cli.Count -gt 0) {
+        Write-Log ("Ignoring {0} Claude Code CLI process(es); only the Desktop app matters here." -f $cli.Count) 'INFO' DarkGray
+    }
+    if ($desktop.Count -gt 0) {
+        Write-Log ("Claude Desktop is still running ({0} process(es))." -f $desktop.Count) 'ERROR' Red
+        foreach ($p in $desktop) {
+            $shown = [string]$p.ExecutablePath
+            if (-not $shown) { $shown = '(path not readable)' }
+            Write-Log ("  PID {0}  {1}" -f $p.ProcessId, $shown) 'ERROR' Red
+        }
         Fail ('Quit Claude Desktop completely first. Closing the window is not enough: ' +
               'right-click the Claude icon in the system tray (bottom right, next to the clock, ' +
               'possibly under the ^ arrow) and choose Quit. Then run this script again.')
